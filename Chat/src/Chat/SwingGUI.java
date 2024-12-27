@@ -1,3 +1,13 @@
+*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package Chat;
+
+/**
+ *
+ * @author ortuo
+ */
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -5,37 +15,45 @@ import java.awt.event.ActionListener;
 
 public class SwingGUI {
 
-    private JFrame frame; // Ventana principal
-    private JTextArea messageArea; // Área para mostrar mensajes
-    private JTextField inputField; // Campo de texto para escribir mensajes
-    private JButton sendButton; // Botón para enviar mensajes
-    private DefaultListModel<String> userListModel; // Modelo para gestionar la lista de usuarios
-    private JList<String> userList; // Lista gráfica de usuarios
+    private JFrame frame;
+    private JTextArea messageArea;
+    private JTextField inputField;
+    private JButton sendButton;
+    private DefaultListModel<String> userListModel;
+    private JList<String> userList;
 
-    private MySocket socket; 
+    private String nick;
+    private MySocket socket;
 
-    public SwingGUI(String username, MySocket socket) {
-        this.socket = socket; 
-        initializeGUI(username);
+    public SwingGUI(String nick, MySocket socket) {
+        this.nick = nick;
+        this.socket = socket;
+        initializeGUI();
     }
 
-    private void initializeGUI(String username) {
-        frame = new JFrame("Chat - " + username);
+    private void initializeGUI() {
+        // Crear ventana principal
+        frame = new JFrame("Chat - " + nick);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(600, 400);
+        frame.setSize(500, 400);
 
-        // **Área de Mensajes**
+        // Área de mensajes
         messageArea = new JTextArea();
-        messageArea.setEditable(false); 
+        messageArea.setEditable(false);
         JScrollPane messageScrollPane = new JScrollPane(messageArea);
 
-        // **Área de Usuarios**
-        userListModel = new DefaultListModel<>(); 
-        userList = new JList<>(userListModel); 
+        // **Lista de Usuarios**
+        userListModel = new DefaultListModel<>(); // Modelo para gestionar usuarios
+        userList = new JList<>(userListModel); // Lista gráfica basada en el modelo
         JScrollPane userScrollPane = new JScrollPane(userList);
-        userScrollPane.setPreferredSize(new Dimension(150, 0)); 
 
-        // **Área de Entrada**
+        // Encapsular la lista en un panel con borde titulado
+        JPanel userListPanel = new JPanel(new BorderLayout());
+        userListPanel.setBorder(BorderFactory.createTitledBorder("Usuarios Conectados"));
+        userListPanel.add(userScrollPane, BorderLayout.CENTER);
+
+
+        // Panel de entrada
         JPanel inputPanel = new JPanel(new BorderLayout());
         inputField = new JTextField();
         sendButton = new JButton("Enviar");
@@ -43,11 +61,13 @@ public class SwingGUI {
         inputPanel.add(inputField, BorderLayout.CENTER);
         inputPanel.add(sendButton, BorderLayout.EAST);
 
+        // Layout principal
         frame.setLayout(new BorderLayout());
-        frame.add(messageScrollPane, BorderLayout.CENTER); 
-        frame.add(userScrollPane, BorderLayout.EAST); 
-        frame.add(inputPanel, BorderLayout.SOUTH); 
+        frame.add(messageScrollPane, BorderLayout.CENTER);
+        frame.add(userListPanel, BorderLayout.EAST);
+        frame.add(inputPanel, BorderLayout.SOUTH);
 
+        // Acción del botón de enviar
         sendButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -55,6 +75,7 @@ public class SwingGUI {
             }
         });
 
+        // Permitir presionar Enter para enviar mensajes
         inputField.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -62,26 +83,32 @@ public class SwingGUI {
             }
         });
 
+        // Mostrar ventana
         frame.setVisible(true);
     }
 
+    // Método para enviar mensajes
     private void sendMessage() {
         String message = inputField.getText().trim();
         if (!message.isEmpty()) {
-            socket.write(message); 
-            inputField.setText(""); 
+            socket.write(nick + "> " + message);
+            addMessage("Yo> "+ message);
+            inputField.setText(""); // Limpia el campo de texto
         }
     }
 
+    // Método para añadir mensajes al área de mensajes
     public void addMessage(String message) {
         messageArea.append(message + "\n");
     }
 
-    // Método para actualizar la lista de usuarios conectados
+    // Método para actualizar la lista de usuarios
     public void updateUserList(String[] users) {
-        userListModel.clear(); 
-        for (String user : users) {
-            userListModel.addElement(user); 
-        }
+    userListModel.clear(); // Limpia la lista actual
+    for (String user : users) {
+        userListModel.addElement(user); // Añade cada usuario al modelo
+        
     }
+   }
+    
 }
