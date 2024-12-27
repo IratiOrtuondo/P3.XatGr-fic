@@ -1,5 +1,3 @@
-package Chat;
-
 public class Client {
 
     public static void main(String[] args) {
@@ -12,23 +10,18 @@ public class Client {
         int port = Integer.parseInt(args[1]);
         String username = args[2];
 
-        // Conectar al servidor
         MySocket socket = new MySocket(hostname, port);
-        socket.write(username); // Enviar el nombre del usuario al servidor
+        socket.write(username); 
 
-        // Crear la interfaz gráfica
-        ChatClientGUI gui = new ChatClientGUI(username, socket);
+        SwingGUI gui = new SwingGUI(username, socket);
 
-        // Hilo para recibir mensajes del servidor
         new Thread(() -> {
             String message;
             while ((message = socket.readLine()) != null) {
                 if (message.startsWith("UPDATE_USERS:")) {
-                    // Actualizar la lista de usuarios conectados
                     String[] users = message.substring("UPDATE_USERS:".length()).split(",");
-                    gui.updateUserList(users);
+                    gui.updateUserList(users); 
                 } else {
-                    // Añadir mensaje al área de mensajes
                     gui.addMessage(message);
                 }
             }

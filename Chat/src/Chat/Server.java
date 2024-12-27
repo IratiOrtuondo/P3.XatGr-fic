@@ -1,6 +1,3 @@
-package Chat;
-
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
@@ -26,7 +23,7 @@ public class Server {
 
                 String message;
                 while ((message = client.readLine()) != null) {
-                    broadcast(message, username);
+                    broadcastMessage(message, username);
                 }
 
                 removeUser(username);
@@ -35,20 +32,20 @@ public class Server {
         }
     }
 
-    public static void addUser(String user, MySocket socket) {
-        users.put(user, socket);
+    private static void addUser(String username, MySocket socket) {
+        users.put(username, socket);
         broadcastUserList();
     }
 
-    public static void removeUser(String user) {
-        users.remove(user);
+    private static void removeUser(String username) {
+        users.remove(username);
         broadcastUserList();
     }
 
-    public static void broadcast(String message, String sender) {
+    private static void broadcastMessage(String message, String sender) {
         users.forEach((user, socket) -> {
             if (!user.equals(sender)) {
-                socket.write(sender + "> " + message);
+                socket.write(sender + ": " + message);
             }
         });
     }
