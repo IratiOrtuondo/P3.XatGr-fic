@@ -1,85 +1,60 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package Chat;
 
-/**
- *
- * @author victor
- */
-import java.util.*;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+public class Server {
 
+    private static ConcurrentHashMap<String, MySocket> users = new ConcurrentHashMap<>();
 
+    public static void main(String[] args) {
+        if (args.length != 1) {
+            System.out.println("Usage: java Server <port>");
+            return;
+        }
 
-public class Server{
-	private static ConcurrentHashMap<String, MySocket> users = new ConcurrentHashMap<>();
-	
-	public static void main(String[] args){
+        int port = Integer.parseInt(args[0]);
+        MyServerSocket serverSocket = new MyServerSocket(port);
+        System.out.println("Server started.");
 
-		if (args.length != 1) {
-			System.out.println("Usage: java Server <port>");
-			return;
-			
-		}
+        while (true) {
+            MySocket client = serverSocket.accept();
 
-		int port = Integer.parseInt(args[0]);
-		MyServerSocket serverSocket = new MyServerSocket(port);
-		System.out.println("Server started.");
+            new Thread(() -> {
+                String username = client.readLine();
+                addUser(username, client);
 
-		while(true){
-			MySocket client = serverSocket.accept();
+                String message;
+                while ((message = client.readLine()) != null) {
+                    broadcast(message, username);
+                }
 
-			new Thread(){
-				public void run(){
-                                  
-				
-					String nick = client.readLine();
-					client.write("Succesfully connected. Type message to send:");
-					addUser(nick, client);
-					String text;
-					while(!"null".equals(text = client.readLine())){
-                                            if(text==null)  {
-                                                break;
-                                                          } 
-						broadcast(text, nick);
-						System.out.println(text);
-                                    
-					
-                                       
-				}
-                                         client.write(null);
-					removeUser(nick);
-					client.close();
-                                }
-			}.start();
-		}
-	}
+                removeUser(username);
+                client.close();
+            }).start();
+        }
+    }
 
+    public static void addUser(String user, MySocket socket) {
+        users.put(user, socket);
+        broadcastUserList();
+    }
 
-	public static void addUser(String user, MySocket s){
-		System.out.println(user+" is on the chat");
-		users.put(user, s);
-	}
+    public static void removeUser(String user) {
+        users.remove(user);
+        broadcastUserList();
+    }
 
+    public static void broadcast(String message, String sender) {
+        users.forEach((user, socket) -> {
+            if (!user.equals(sender)) {
+                socket.write(sender + "> " + message);
+            }
+        });
+    }
 
-	public static void removeUser(String user){
-		System.out.println(user+" left the chat");
-		users.remove(user);
-	}
-
-
-	public static void broadcast(String message, String nick){
-		MySocket client= users.get(nick);
-		
-		for (Map.Entry<String, MySocket> entry : users.entrySet()) {
-            String actualUser = entry.getKey();
-            MySocket actualSocket = entry.getValue();
-			if(actualUser!=nick){
-				actualSocket.write(message);
-			}
-		}
-	}
+    private static void broadcastUserList() {
+        String userList = String.join(",", users.keySet());
+        users.forEach((user, socket) -> socket.write("UPDATE_USERS:" + userList));
+    }
 }
